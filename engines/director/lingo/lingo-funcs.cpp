@@ -140,6 +140,10 @@ void Lingo::func_gotonext() {
 	debugC(3, kDebugLingoExec, "Lingo::func_gotonext(): going to next frame %d", score->getNextFrame());
 
 	stage->_skipFrameAdvance = true;
+
+	// Like func_goto, resume the script after entering the next frame
+	if (!_playDone)
+		_freezeState = true;
 }
 
 void Lingo::func_gotoprevious() {
