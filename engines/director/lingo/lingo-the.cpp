@@ -1764,9 +1764,9 @@ Datum Lingo::getTheSprite(Datum &id1, int field) {
 		d = (int)(sprite->_colorcode & 0x7);
 		break;
 	case kTheScriptInstanceList:
-		warning("STUB: Getting the scriptInstanceList");
-		d.type = PARRAY;
-		d.u.parr = new PArray;
+		d.type = ARRAY;
+		d.u.farr = new FArray();
+		d.u.farr->arr = channel->_scriptInstanceList;
 		break;
 	case kTheScriptNum:
 		if (g_director->getVersion() >= 600) {
