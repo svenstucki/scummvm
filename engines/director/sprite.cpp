@@ -360,10 +360,21 @@ bool Sprite::respondsToMouse() {
 	if (_cast && _cast->_type == kCastMovie)
 		return ((MovieCastMember *)_cast)->_enableScripts;
 
-	// TODO: Check if we need to check against individual events like below
+	// Behaviors without mouse handlers let the mouse through, e.g. for custom cursor sprites
 	if (g_director->getVersion() >= 600) {
-		if (_behaviors.size() > 0)
-			return true;
+		static const LEvent mouseEvents[] = {
+			kEventMouseDown, kEventMouseUp, kEventRightMouseDown, kEventRightMouseUp,
+			kEventMouseEnter, kEventMouseLeave, kEventMouseWithin, kEventMouseUpOutSide
+		};
+		for (auto &behavior : _behaviors) {
+			ScriptContext *script = _movie->getScriptContext(kScoreScript, behavior.memberID);
+			if (!script)
+				continue;
+			for (auto event : mouseEvents) {
+				if (script->_eventHandlers.contains(event))
+					return true;
+			}
+		}
 	}
 
 	ScriptContext *spriteScript = _movie->getScriptContext(kScoreScript, _scriptId);
