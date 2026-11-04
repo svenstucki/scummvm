@@ -881,7 +881,8 @@ bool SavedArchive::_addFile(const Common::String &fileName) {
 	// Derive the original file name from the save file name
 	// Save files are named target_name-save_filename
 	// Normalise it with convertPath.
-	Common::String origFileName = convertPath(fileName.substr(_target.size() + 1));
+	// Lookups come in as Common::Path strings, which use '/' as separator
+	Common::String origFileName = Common::Path(convertPath(fileName.substr(_target.size() + 1)), g_director->_dirSeparator).toString();
 	if (!_files.contains(origFileName)) {
 		debugC(3, kDebugLoading, "Found save file: %s -> %s", fileName.c_str(), fileName.c_str());
 
