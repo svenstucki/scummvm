@@ -914,8 +914,17 @@ Datum Score::createScriptInstance(BehaviorElement *behavior) {
 		return Datum();
 	}
 
+	int frame = g_lingo->_state->callstack.size();
 	g_lingo->push(scr);
 	LC::call("new", 1, true);
+	// A scripted new handler has only been entered so far, run it to get the instance
+	if ((int)g_lingo->_state->callstack.size() > frame)
+		g_lingo->execute(frame);
+
+	if (g_lingo->_state->stack.empty()) {
+		warning("Score::createScriptInstance(): Could not instantiate behavior %s", behavior->toString().c_str());
+		return Datum();
+	}
 	Datum instance = g_lingo->pop();
 
 	if (instance.type != OBJECT) {
@@ -930,15 +939,16 @@ Datum Score::createScriptInstance(BehaviorElement *behavior) {
 		return instance;
 
 	// Evaluate the params
+	uint stackSize = g_lingo->_state->stack.size();
 	g_lingo->push(behavior->initializerParams);
 	LB::b_value(1);
-	g_lingo->execute();
+	g_lingo->execute(frame);
 
 	if (debugChannelSet(5, kDebugLingoExec)) {
 		g_lingo->printStack("  Parsed behavior parameters: ", 0);
 	}
 
-	if (g_lingo->_state->stack.size() == 0) {
+	if (g_lingo->_state->stack.size() <= stackSize) {
 		warning("Score::createScriptInstance(): Could not evaluate initializer params '%s' for behavior %s",
 			behavior->initializerParams.c_str(), behavior->toString().c_str());
 		return instance;
