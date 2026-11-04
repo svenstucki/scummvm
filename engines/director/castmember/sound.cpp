@@ -150,6 +150,7 @@ void SoundCastMember::load() {
 
 	if (sndFormat) {
 		_audio = sndFormat;
+		_size = sndFormat->_size;
 		_loaded = true;
 		return;
 	}
