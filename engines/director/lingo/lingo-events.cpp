@@ -1091,6 +1091,8 @@ void Score::createScriptInstances(int frameNum) {
 				continue;
 			}
 
+			// Behaviors may be called from other objects, so remember their sprite
+			instance.u.obj->setProp("spriteNum", Datum(i), true);
 			channel->_scriptInstanceList.push_back(instance);
 		}
 
