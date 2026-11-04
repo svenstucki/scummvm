@@ -201,6 +201,8 @@ private:
 
 	static const uint32 kNoParent = 0xFFFFFFFF;
 	uint32 findParentIndex(uint32 tag, uint16 index);	// kNoParent when absent
+	Cast *findCast(Movie *movie, uint32 libResourceId);	// the cast stored in this archive
+	Cast *findConfigCast(Movie *movie);
 	CastMember *findResourceOwner(Movie *movie, uint32 tag, uint16 index);	// nullptr when unresolvable
 
 	/* Memory Map data to save the file */
