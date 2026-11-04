@@ -254,6 +254,14 @@ void FilmLoopCastMember::load() {
 		_score = new Score(g_director->getCurrentMovie(), false);
 		_score->loadFrames(*loop, _cast->_version, true);
 		delete loop;
+
+		// Members in the film loop's own cast library are stored with castLib -1
+		for (auto &frame : _score->_scoreCache) {
+			for (auto &sprite : frame->_sprites) {
+				if (sprite && sprite->_castId.castLib == -1)
+					sprite->setCast(CastMemberID(sprite->_castId.member, _cast->_castLibID), false);
+			}
+		}
 	} else {
 		warning("FilmLoopCastMember::load(): Film loop not found");
 	}
