@@ -50,7 +50,13 @@ Stxt::Stxt(Cast *cast, Common::SeekableReadStreamEndian &textStream) : _cast(cas
 	}
 	uint32 strLen = textStream.readUint32();
 	uint32 dataLen = textStream.readUint32();
-	Common::String text = textStream.readString(0, strLen);
+	// Text may contain NUL characters, e.g. when used to store binary data
+	Common::String text;
+	if (strLen) {
+		Common::Array<char> textData(strLen);
+		strLen = textStream.read(textData.data(), strLen);
+		text = Common::String(textData.data(), strLen);
+	}
 	debugC(3, kDebugText, "Stxt init: offset: %d strLen: %d dataLen: %d textlen: %u", offset, strLen, dataLen, text.size());
 
 	// TODO: Before applying formatting and decoding the text to a U32String,
@@ -78,16 +84,14 @@ Stxt::Stxt(Cast *cast, Common::SeekableReadStreamEndian &textStream) : _cast(cas
 
 		assert(prevPos <= _style.formatStartOffset);  // If this is triggered, we have to implement sorting
 
-		Common::String textPart;
-		while (prevPos != _style.formatStartOffset) {
-			char f = text.firstChar();
-			textPart += f;
-			text.deleteChar(0);
+		uint32 partLen = MIN<uint32>(_style.formatStartOffset - prevPos, text.size());
+		Common::String textPart(text.c_str(), partLen);
+		text.erase(0, partLen);
+		prevPos = _style.formatStartOffset;
 
-			if (f == '\001')	// Insert two \001s as a replacement
+		for (uint32 i = 0; i < partLen; i++) {
+			if (textPart[i] == '\001')	// Insert two \001s as a replacement
 				_ftext += '\001';
-
-			prevPos++;
 		}
 		_rtext += textPart;
 		Common::CodePage encoding = detectFontEncoding(cast->_platform, currentFont);
