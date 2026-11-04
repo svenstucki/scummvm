@@ -358,7 +358,8 @@ bool DirectorSound::isChannelActive(int soundChannel) {
 
 	// Looped sounds are considered to be inactive after the first play
 	// WORKAROUND HACK
-	if (_channels[soundChannel]->loopPtr != nullptr)
+	// D6 reports a looping sound as busy for as long as it plays
+	if (_channels[soundChannel]->loopPtr != nullptr && g_director->getVersion() < 600)
 		return _channels[soundChannel]->loopPtr->getCompleteIterations() < 1;
 
 	return true;
