@@ -112,7 +112,7 @@ public:
 
 	bool getEditable();
 
-	bool respondsToMouse();
+	bool respondsToMouse(bool rollOver = false);
 	bool isActive();
 	bool shouldHilite();
 	bool checkSpriteType();

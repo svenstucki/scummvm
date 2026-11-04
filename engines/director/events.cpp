@@ -231,6 +231,9 @@ bool Movie::processSysEvent(Common::Event &event) {
 				if (g_system->getEventManager()->getButtonState() == 0)
 					return true;
 
+			if (g_director->getVersion() >= 600)
+				spriteId = _score->getMouseSpriteIDFromPos(pos, true);
+
 			if (spriteId > 0) {
 				if (spriteId != _lastEnteredChannelId) {
 					if (_lastEnteredChannelId) {

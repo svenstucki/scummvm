@@ -1687,10 +1687,10 @@ uint16 Score::getSpriteIDFromPos(Common::Point pos) {
 	return 0;
 }
 
-uint16 Score::getMouseSpriteIDFromPos(Common::Point pos) {
+uint16 Score::getMouseSpriteIDFromPos(Common::Point pos, bool rollOver) {
 	for (int i = _channels.size() - 1; i >= 0; i--) {
 		CollisionTest test = _channels[i]->isMouseIn(pos);
-		if (test == kCollisionYes && _channels[i]->_sprite->respondsToMouse())
+		if (test == kCollisionYes && _channels[i]->_sprite->respondsToMouse(rollOver))
 			return i;
 		else if (test == kCollisionHole)
 			break;

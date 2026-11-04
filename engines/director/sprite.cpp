@@ -348,7 +348,7 @@ bool Sprite::getEditable() {
 	return _editable || _cast->isEditable();
 }
 
-bool Sprite::respondsToMouse() {
+bool Sprite::respondsToMouse(bool rollOver) {
 	if (_moveable)
 		return true;
 
@@ -360,18 +360,20 @@ bool Sprite::respondsToMouse() {
 	if (_cast && _cast->_type == kCastMovie)
 		return ((MovieCastMember *)_cast)->_enableScripts;
 
-	// Behaviors without mouse handlers let the mouse through, e.g. for custom cursor sprites
+	// Behaviors without mouse handlers let the mouse through, e.g. for custom cursor sprites.
+	// Rollover events also pass through behaviors that only handle clicks, e.g. a dragged sprite.
 	if (g_director->getVersion() >= 600) {
 		static const LEvent mouseEvents[] = {
-			kEventMouseDown, kEventMouseUp, kEventRightMouseDown, kEventRightMouseUp,
-			kEventMouseEnter, kEventMouseLeave, kEventMouseWithin, kEventMouseUpOutSide
+			kEventMouseEnter, kEventMouseLeave, kEventMouseWithin,
+			kEventMouseDown, kEventMouseUp, kEventRightMouseDown, kEventRightMouseUp, kEventMouseUpOutSide
 		};
+		uint numEvents = rollOver ? 3 : ARRAYSIZE(mouseEvents);
 		for (auto &behavior : _behaviors) {
 			ScriptContext *script = _movie->getScriptContext(kScoreScript, behavior.memberID);
 			if (!script)
 				continue;
-			for (auto event : mouseEvents) {
-				if (script->_eventHandlers.contains(event))
+			for (uint i = 0; i < numEvents; i++) {
+				if (script->_eventHandlers.contains(mouseEvents[i]))
 					return true;
 			}
 		}
