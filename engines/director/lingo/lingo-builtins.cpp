@@ -3354,6 +3354,24 @@ void LB::b_puppetSound(int nargs) {
 				// FIXME: Figure out how to deal with multilib in D5+
 				castMember = arg2.asMemberID(kCastSound);
 				channel = arg1.asInt();
+
+				// In D6 only the one-argument form makes the channel a puppet,
+				// which it passes on as channel 0. With a channel of 1 or more
+				// the sound plays right away, and a new sound in the score's
+				// sound channel replaces it. Channels above 32 play on channel 1.
+				if (g_director->getVersion() >= 600) {
+					if (channel < 1) {
+						channel = 1;
+					} else {
+						if (channel > 32)
+							channel = 1;
+						if (castMember.member == 0)
+							sound->stopSound(channel);
+						else
+							sound->playCastMember(castMember, channel, true);
+						return;
+					}
+				}
 			}
 			sound->setPuppetSound(castMember, channel);
 
