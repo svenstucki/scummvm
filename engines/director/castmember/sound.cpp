@@ -131,11 +131,12 @@ void SoundCastMember::load() {
 					int32 cuePoint = sndData->readSint32BE();
 					_cuePoints.push_back(cuePoint);
 
+					// Str31: length byte followed by up to 31 characters
 					sndData->read(cuePointName, 32);
-					cuePointName[31] = '\0';
-					_cuePointNames.push_back(cuePointName);
+					uint8 nameLen = MIN<uint8>((uint8)cuePointName[0], 31);
+					_cuePointNames.push_back(Common::String(cuePointName + 1, nameLen));
 
-					debugC(2, kDebugLoading, "    Cue point %d: %d (%s) in sound cast member %d", i, cuePoint, cuePointName, _castId);
+					debugC(2, kDebugLoading, "    Cue point %d: %d (%s) in sound cast member %d", i, cuePoint, _cuePointNames.back().c_str(), _castId);
 				}
 			} else {
 				debugC(2, kDebugLoading, "SoundCastMember::load(): Ignoring unknown tag '%s' in sound cast member %d", tag2str(it.tag), _castId);
