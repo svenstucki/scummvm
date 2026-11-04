@@ -513,8 +513,15 @@ void Score::updateCurrentFrame() {
 		// This copies in the frame data and updates _curFrameNumber.
 		loadFrame(nextFrameNumberToLoad, true);
 
-		for (uint ch = 0; ch < _channels.size(); ch++)
-			_channels[ch]->_sprite->releaseAutoPuppet(_currentFrame->_sprites[ch]->_copyBackMask);
+		for (uint ch = 0; ch < _channels.size(); ch++) {
+			Sprite *sprite = _channels[ch]->_sprite;
+			Sprite *frameSprite = _currentFrame->_sprites[ch];
+			// Auto-puppeted properties only last until the end of the sprite span
+			if (_version >= kFileVer600 && sprite->_spriteListIdx != frameSprite->_spriteListIdx)
+				sprite->_autoPuppet = kAPNone;
+			else
+				sprite->releaseAutoPuppet(frameSprite->_copyBackMask);
+		}
 
 		// Finally, update the channels and buffer any dirty rectangles.
 		// This will ignore any channel data that is overridden with the puppet flag.
