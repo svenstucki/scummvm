@@ -1709,6 +1709,10 @@ void LC::call(const Common::String &name, int nargs, bool allowRetVal) {
 		}
 	}
 
+	// save(castLib x) inside an object with its own save method must reach the builtin
+	bool useCastLibBuiltin = name.equalsIgnoreCase("save") && nargs >= 1 &&
+		g_lingo->peek(nargs - 1).type == CASTLIBREF;
+
 	// If we're calling from within a me object, and it has a function handler with a
 	// matching name, include the me object in the CFrame (so we still get property lookups).
 	// Doesn't matter that the first arg isn't the me object (which would have been caught
@@ -1717,7 +1721,7 @@ void LC::call(const Common::String &name, int nargs, bool allowRetVal) {
 	// If the method is called from outside and without the object as the first arg,
 	// it will still work using the normal getHandler lookup.
 	// However properties will return garbage (the number 3??).
-	if (!useListBuiltin && g_lingo->_state->me.type == OBJECT) {
+	if (!useListBuiltin && !useCastLibBuiltin && g_lingo->_state->me.type == OBJECT) {
 		AbstractObject *target = g_lingo->_state->me.u.obj;
 		funcSym = target->getMethod(name);
 		if (funcSym.type != VOIDSYM) {
@@ -1731,6 +1735,8 @@ void LC::call(const Common::String &name, int nargs, bool allowRetVal) {
 
 	if (useListBuiltin)
 		funcSym = g_lingo->_builtinListHandlers[name];
+	else if (useCastLibBuiltin)
+		funcSym = Symbol();
 
 	if (funcSym.type == VOIDSYM) { // The built-ins could be overridden
 		// Builtin
