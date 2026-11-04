@@ -85,7 +85,9 @@ void U32String::decodeUTF8(const char *src, uint32 len) {
 			break;
 		}
 
-		operator+=(chr);
+		// Append as a range, so that U+0000 doesn't trigger a warning
+		value_type c = chr;
+		append(&c, &c + 1);
 	}
 }
 
@@ -907,7 +909,8 @@ StringEncodingResult String::encodeUTF8(const U32String &src, char errorChar) {
 			break;
 		}
 
-		operator+=(pBytes);
+		// Append the bytes as a range, so that U+0000 isn't lost
+		append(pBytes, pBytes + bytesToWrite);
 	}
 
 	return kStringEncodingResultSucceeded;
@@ -1076,13 +1079,16 @@ void U32String::decodeOneByte(const char *src, uint32 len, CodePage page) {
 	ensureCapacity(len, false);
 
 	for (uint i = 0; i < len; ++i) {
+		value_type c;
 		if ((src[i] & 0x80) == 0) {
-			operator+=(src[i]);
-			continue;
+			c = src[i];
+		} else {
+			uint16 val = conversionTable[src[i] & 0x7f];
+			c = val ? val : invalidCode;
 		}
 
-		uint16 val = conversionTable[src[i] & 0x7f];
-		operator+=(val ? val : invalidCode);
+		// Append as a range, so that U+0000 doesn't trigger a warning
+		append(&c, &c + 1);
 	}
 }
 
