@@ -111,6 +111,10 @@ void Lingo::func_goto(Datum &frame, Datum &movie, bool calledfromgo) {
 		score->setCurrentFrame(frame.asInt());
 	}
 
+	killScriptInstancesForGoto(score);
+}
+
+void Lingo::killScriptInstancesForGoto(Score *score) {
 	// Since the frames are not going to be consecutive, we might run into
 	// an endge case, so better kill behaviors proactively.
 	// endSprite handlers run nested here and must not consume the pending freeze
@@ -148,6 +152,8 @@ void Lingo::func_gotonext() {
 	// Like func_goto, resume the script after entering the next frame
 	if (!_playDone)
 		_freezeState = true;
+
+	killScriptInstancesForGoto(score);
 }
 
 void Lingo::func_gotoprevious() {
@@ -161,6 +167,8 @@ void Lingo::func_gotoprevious() {
 	debugC(3, kDebugLingoExec, "Lingo::func_gotoprevious(): going to previous frame %d", score->getNextFrame());
 
 	stage->_skipFrameAdvance = true;
+
+	killScriptInstancesForGoto(score);
 }
 
 void Lingo::func_play(Datum &frame, Datum &movie) {
