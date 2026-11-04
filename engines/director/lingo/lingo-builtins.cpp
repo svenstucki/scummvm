@@ -114,7 +114,7 @@ static const BuiltinProto builtins[] = {
 	{ "openDA",	 		LB::b_openDA, 		1, 1, 200, CBLTIN },	// D2 c
 	{ "openResFile",	LB::b_openResFile,	1, 1, 200, CBLTIN },	// D2 c
 	{ "openXlib",		LB::b_openXlib,		1, 1, 200, CBLTIN },	// D2 c
-	{ "save",			LB::b_save,			1, 1, 500, CBLTIN },	//				D5 c
+	{ "save",			LB::b_save,			1, 2, 500, CBLTIN },	//				D5 c
 	{ "saveMovie",		LB::b_saveMovie,	0, 1, 400, CBLTIN },	//			D4 c
 	{ "setCallBack",	LB::b_setCallBack,	2, 2, 200, CBLTIN },	// D2 c
 	{ "showResFile",	LB::b_showResFile,	0, 1, 200, CBLTIN },	// D2 c
@@ -1830,9 +1830,27 @@ void LB::b_openXlib(int nargs) {
 }
 
 void LB::b_save(int nargs) {
-	g_lingo->printSTUBWithArglist("b_save", nargs);
+	// save castLib whichCast {, pathName}
+	Datum path;
+	if (nargs == 2)
+		path = g_lingo->pop();
+	Datum lib = g_lingo->pop();
 
-	g_lingo->dropStack(nargs);
+	if (lib.type != CASTLIBREF) {
+		warning("LB::b_save(): Unsupported argument type %s", lib.type2str());
+		return;
+	}
+
+	Movie *movie = g_director->getCurrentMovie();
+	Cast *cast = movie->getCasts()->getValOrDefault(lib.u.i);
+	if (!cast || !cast->_isExternal || !cast->getArchive()) {
+		warning("LB::b_save(): castLib %d is not an external cast", lib.u.i);
+		return;
+	}
+
+	Archive *archive = cast->getArchive().get();
+	Common::String filename = path.type == VOID ? archive->getPathName().toString(g_director->_dirSeparator) : path.asString();
+	archive->writeToFile(filename, movie);
 }
 
 void LB::b_saveMovie(int nargs) {
