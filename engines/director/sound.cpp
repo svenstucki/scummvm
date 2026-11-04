@@ -782,7 +782,8 @@ void DirectorSound::processCuePoints() {
 
 				debugC(5, kDebugSound, "DirectorSound::processCuePoints(): cue point %d reached on channel %d", cuePoint, it._key);
 
-				_window->getCurrentMovie()->processEvent(kEventCuePassed, i);
+				Common::String cuePointName = i < soundCast->_cuePointNames.size() ? soundCast->_cuePointNames[i] : "";
+				_window->getCurrentMovie()->processCuePassed(it._key, i + 1, cuePointName);
 
 				channel->lastCuePointIndex = i;
 			}

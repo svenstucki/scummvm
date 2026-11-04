@@ -719,6 +719,51 @@ void Movie::processEvent(LEvent event, int targetId) {
 	}
 }
 
+void Movie::processCuePassed(int soundChannel, int cuePointNumber, const Common::String &cuePointName) {
+	// cuePassed takes arguments, so call the sprite and frame behaviors directly
+	Common::Array<Datum> instances;
+	for (uint i = 1; i < _score->_channels.size(); i++) {
+		if (_score->_channels[i])
+			instances.push_back(_score->_channels[i]->_scriptInstanceList);
+	}
+	instances.push_back(_score->_scriptChannelScriptInstance);
+
+	Datum channel(Common::String::format("Sound%d", soundChannel));
+	channel.type = SYMBOL;
+
+	for (uint i = 0; i < instances.size(); i++) {
+		if (instances[i].type != OBJECT)
+			continue;
+		Symbol sym = instances[i].u.obj->getMethod(_lingo->_eventHandlerTypes[kEventCuePassed]);
+		if (sym.type == VOIDSYM)
+			continue;
+
+		int frame = _lingo->_state->callstack.size();
+		_lingo->push(instances[i]);
+		_lingo->push(channel);
+		_lingo->push(Datum(cuePointNumber));
+		_lingo->push(Datum(cuePointName));
+		LC::call(sym, 4, false);
+		_lingo->execute(frame);
+	}
+
+	// Movie scripts get it when the frame script doesn't handle it
+	Datum &frameScript = _score->_scriptChannelScriptInstance;
+	if (frameScript.type == OBJECT && frameScript.u.obj->getMethod(_lingo->_eventHandlerTypes[kEventCuePassed]).type != VOIDSYM)
+		return;
+
+	Symbol handler = _lingo->getHandler(_lingo->_eventHandlerTypes[kEventCuePassed]);
+	if (handler.type == VOIDSYM || !handler.ctx || handler.ctx->_scriptType != kMovieScript)
+		return;
+
+	int frame = _lingo->_state->callstack.size();
+	_lingo->push(channel);
+	_lingo->push(Datum(cuePointNumber));
+	_lingo->push(Datum(cuePointName));
+	LC::call(handler, 3, false);
+	_lingo->execute(frame);
+}
+
 void Movie::broadcastEvent(LEvent event) {
 	Common::Queue<LingoEvent> queue;
 
