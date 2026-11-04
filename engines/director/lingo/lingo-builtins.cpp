@@ -1119,6 +1119,7 @@ void LB::b_getaProp(int nargs) {
 		{
 			if (prop.type != SYMBOL) {
 				g_lingo->lingoError("b_getaProp(): symbol expected");
+				g_lingo->push(Datum());
 				return;
 			}
 			Datum d;
@@ -1128,7 +1129,8 @@ void LB::b_getaProp(int nargs) {
 		}
 		break;
 	default:
-		TYPECHECK3(list, ARRAY, PARRAY, OBJECT);
+		g_lingo->lingoError("b_getaProp(): list expected, not %s", list.type2str());
+		g_lingo->push(Datum());
 		break;
 	}
 }
