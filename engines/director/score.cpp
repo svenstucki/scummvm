@@ -803,6 +803,11 @@ void Score::update() {
 		// first frame already loaded.
 		sound1Changed = oldSound1 != _currentFrame->_mainChannels.sound1;
 		sound2Changed = oldSound2 != _currentFrame->_mainChannels.sound2;
+	} else if (_version >= kFileVer600) {
+		// D6 compares with the last sound the score played, which is none
+		// in a new movie, so an empty channel leaves Lingo sounds playing
+		sound1Changed = !_currentFrame->_mainChannels.sound1.isNull();
+		sound2Changed = !_currentFrame->_mainChannels.sound2.isNull();
 	}
 
 	_firstRun = false;
