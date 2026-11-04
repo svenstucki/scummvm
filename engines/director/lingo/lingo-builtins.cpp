@@ -3531,7 +3531,8 @@ void LB::b_sendAllSprites(int nargs) {
 	Datum result;
 	Movie *movie = g_director->getCurrentMovie();
 	Score *score = movie ? movie->getScore() : nullptr;
-	if (score) {
+	// Sprites don't exist yet during prepareMovie
+	if (score && score->_playState != kPlayLoaded) {
 		score->createScriptInstances(score->getCurrentFrameNum());
 
 		bool anyHandled = false;
@@ -3558,7 +3559,7 @@ void LB::b_sendAllSprites(int nargs) {
 
 		if (!anyHandled) {
 			Symbol h = g_lingo->getHandler(msgName);
-			if (h.type != VOIDSYM) {
+			if (h.type != VOIDSYM && h.ctx && h.ctx->_scriptType == kMovieScript) {
 				for (int j = (int)extraArgs.size() - 1; j >= 0; j--)
 					g_lingo->push(extraArgs[j]);
 				int frame = g_lingo->_state->callstack.size();
@@ -3597,7 +3598,7 @@ void LB::b_sendSprite(int nargs) {
 	Datum result;
 	Movie *movie = g_director->getCurrentMovie();
 	Score *score = movie ? movie->getScore() : nullptr;
-	Channel *channel = score ? score->getChannelById((uint16)spriteNum) : nullptr;
+	Channel *channel = score && score->_playState != kPlayLoaded ? score->getChannelById((uint16)spriteNum) : nullptr;
 	if (channel) {
 		if (channel->_scriptInstanceList.empty() && channel->_sprite && !channel->_sprite->_behaviors.empty())
 			score->createScriptInstances(score->getCurrentFrameNum());
@@ -3619,9 +3620,17 @@ void LB::b_sendSprite(int nargs) {
 			handled = true;
 		}
 
+		// Unhandled messages pass on to the frame script, then to movie scripts
+		Datum frameScript = score->_scriptChannelScriptInstance;
+		if (!handled && frameScript.type == OBJECT && frameScript.u.obj->getMethod(msgName).type != VOIDSYM) {
+			if (!callBehaviorHandler(frameScript, msgName, extraArgs, result, allowRetVal))
+				return;
+			handled = true;
+		}
+
 		if (!handled) {
 			Symbol h = g_lingo->getHandler(msgName);
-			if (h.type != VOIDSYM) {
+			if (h.type != VOIDSYM && h.ctx && h.ctx->_scriptType == kMovieScript) {
 				for (int j = (int)extraArgs.size() - 1; j >= 0; j--)
 					g_lingo->push(extraArgs[j]);
 				int frame = g_lingo->_state->callstack.size();
