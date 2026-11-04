@@ -1034,8 +1034,8 @@ void LB::b_deleteProp(int nargs) {
 
 
 void LB::b_duplicateList(int nargs) {
+	// Values that aren't lists are returned as they are
 	Datum list = g_lingo->pop();
-	TYPECHECK2(list, ARRAY, PARRAY);
 	g_lingo->push(list.clone());
 }
 
