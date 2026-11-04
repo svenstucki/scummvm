@@ -2490,6 +2490,19 @@ void Lingo::setTheChunk(Datum &chunk, int field, Datum &d) {
 	((TextCastMember *)member)->setChunkField(field, start, end, d);
 }
 
+// D6+: properties a sprite doesn't have itself are looked up in its behaviors
+static AbstractObject *findSpriteBehaviorWithProp(int spriteId, const Common::String &propName) {
+	Movie *movie = g_director->getCurrentMovie();
+	Channel *channel = movie ? movie->getScore()->getChannelById(spriteId) : nullptr;
+	if (!channel)
+		return nullptr;
+	for (auto &instance : channel->_scriptInstanceList) {
+		if (instance.type == OBJECT && instance.u.obj->hasProp(propName))
+			return instance.u.obj;
+	}
+	return nullptr;
+}
+
 void Lingo::getObjectProp(Datum &obj, Common::String &propName) {
 	Datum d;
 	if (obj.type == OBJECT) {
@@ -2643,6 +2656,10 @@ void Lingo::getObjectProp(Datum &obj, Common::String &propName) {
 		Common::String key = Common::String::format("%d%s", kTheSprite, propName.c_str());
 		if (_theEntityFields.contains(key)) {
 			d = getTheSprite(obj, _theEntityFields[key]->field);
+		} else if (_vm->getVersion() >= 600) {
+			AbstractObject *behavior = findSpriteBehaviorWithProp(obj.u.i, propName);
+			if (behavior)
+				d = behavior->getProp(propName);
 		}
 		g_lingo->push(d);
 		return;
@@ -2768,6 +2785,10 @@ void Lingo::setObjectProp(Datum &obj, Common::String &propName, Datum &val) {
 		Common::String key = Common::String::format("%d%s", kTheSprite, propName.c_str());
 		if (_theEntityFields.contains(key)) {
 			setTheSprite(obj, _theEntityFields[key]->field, val);
+		} else if (_vm->getVersion() >= 600) {
+			AbstractObject *behavior = findSpriteBehaviorWithProp(obj.u.i, propName);
+			if (behavior)
+				behavior->setProp(propName, val);
 		}
 	} else {
 		g_lingo->lingoError("Lingo::setObjectProp: Invalid object: %s", obj.asString(true).c_str());
