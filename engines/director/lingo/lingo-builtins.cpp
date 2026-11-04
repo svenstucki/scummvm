@@ -1203,10 +1203,12 @@ void LB::b_getOne(int nargs) {
 void LB::b_getPos(int nargs) {
 	Datum val = g_lingo->pop();
 	Datum list = g_lingo->pop();
-	TYPECHECK2(list, ARRAY, PARRAY);
+	TYPECHECK4(list, ARRAY, PARRAY, POINT, RECT);
 
 	switch (list.type) {
-	case ARRAY: {
+	case ARRAY:
+	case POINT:
+	case RECT: {
 		Datum d(0);
 		int index = LC::compareArrays(LC::eqDataStrict, list, val, true).u.i;
 		if (index > 0) {
