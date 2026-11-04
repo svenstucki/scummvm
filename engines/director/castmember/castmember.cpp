@@ -304,6 +304,8 @@ void CastMember::setField(int field, const Datum &d) {
 			return;
 		}
 		castInfo->name = d.asString();
+		// Make sure the name is among the info strings written on save
+		castInfo->count = MAX<uint16>(castInfo->count, 2);
 		setModified(true);
 		_cast->rebuildCastNameCache();
 		return;

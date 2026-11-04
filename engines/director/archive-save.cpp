@@ -431,6 +431,7 @@ Common::Array<Resource *> RIFXArchive::rebuildResources(Movie *movie) {
 						}
 						res->children.push_back(child);
 					}
+					addMissingChildResources(res, jt._value);
 
 					for (const auto &child : res->children) {
 						_keyData[child.tag][res->index].push_back(child.index);
@@ -450,6 +451,7 @@ Common::Array<Resource *> RIFXArchive::rebuildResources(Movie *movie) {
 					}
 
 					res->children = jt._value->_children;
+					addMissingChildResources(res, jt._value);
 
 					for (const auto &child : res->children) {
 						_keyData[child.tag][res->index].push_back(child.index);
@@ -761,6 +763,38 @@ CastMember *RIFXArchive::findResourceOwner(Movie *movie, uint32 tag, uint16 inde
 	const Resource &parent = castResMap[parentIndex];
 	Cast *cast = findCast(movie, parent.libResourceId);
 	return cast ? cast->getCastMember(parent.castId + cast->_castArrayStart) : nullptr;
+}
+
+void RIFXArchive::addMissingChildResources(Resource *res, CastMember *member) {
+	// Members created at runtime have no resource for their content yet
+	if (member->_type != kCastText && member->_type != kCastButton)
+		return;
+
+	uint32 tag = MKTAG('S', 'T', 'X', 'T');
+	for (const auto &child : res->children) {
+		if (child.tag == tag)
+			return;
+	}
+
+	uint16 childIndex = _resources.size();
+	Resource &newChild = _types[tag][childIndex];
+	newChild.index = childIndex;
+	newChild.offset = 0;
+	newChild.size = 0;
+	newChild.uncompSize = 0;
+	newChild.compressionType = 0;
+	newChild.castId = 0;
+	newChild.libResourceId = 0;
+	newChild.tag = tag;
+	newChild.flags = 0;
+	newChild.unk1 = 0;
+	newChild.nextFreeResourceID = 0;
+	newChild.accessed = true;
+	_resources.push_back(&newChild);
+	res->children.push_back(newChild);
+	// Later saves reuse it
+	member->_children.push_back(newChild);
+	debugC(5, kDebugSaving, "RIFXArchive::addMissingChildResources(): new 'STXT' resource %d added", childIndex);
 }
 
 Cast *RIFXArchive::findCast(Movie *movie, uint32 libResourceId) {

@@ -203,6 +203,7 @@ private:
 	uint32 findParentIndex(uint32 tag, uint16 index);	// kNoParent when absent
 	Cast *findCast(Movie *movie, uint32 libResourceId);	// the cast stored in this archive
 	Cast *findConfigCast(Movie *movie);
+	void addMissingChildResources(Resource *res, CastMember *member);
 	CastMember *findResourceOwner(Movie *movie, uint32 tag, uint16 index);	// nullptr when unresolvable
 
 	/* Memory Map data to save the file */
