@@ -20,6 +20,7 @@
  */
 
 #include "common/system.h"
+#include "common/tokenizer.h"
 #include "common/translation.h"
 
 #include "director/types.h"
@@ -1667,6 +1668,15 @@ void LB::b_getNthFileNameInFolder(int nargs) {
 	// getNthFileNameInFolder requires an absolute path as an input.
 	// relative paths will not match anything.
 	Common::Path path = findAbsolutePath(pathRaw, true);
+	if (path.empty() && isAbsolutePath(pathRaw)) {
+		// The game root resolves to an empty path, and so does a folder
+		// that can't be found. Only the game root has files.
+		Common::StringTokenizer components(convertPath(pathRaw), Common::String(g_director->_dirSeparator));
+		if (!components.empty()) {
+			g_lingo->push(Datum(""));
+			return;
+		}
+	}
 	// for directory, we either return the correct path, which we can access recursively.
 	// or we get a wrong path, which will lead us to a non-exist file node
 
