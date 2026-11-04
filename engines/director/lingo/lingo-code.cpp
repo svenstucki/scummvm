@@ -1861,6 +1861,7 @@ void LC::call(const Symbol &funcSym, int nargs, bool allowRetVal) {
 	if (funcSym.type != HANDLER) {
 		g_debugger->builtinHook(funcSym);
 		uint stackSizeBefore = g_lingo->_state->stack.size() - nargs;
+		LingoState *stateBefore = g_lingo->_state;
 
 		if (target.type != VOID) {
 			// Only need to update the me obj
@@ -1888,7 +1889,8 @@ void LC::call(const Symbol &funcSym, int nargs, bool allowRetVal) {
 
 		uint stackSize = g_lingo->_state->stack.size();
 
-		if (funcSym.u.bltin != LB::b_return && funcSym.u.bltin != LB::b_value) {
+		// A builtin that ran Lingo which froze has swapped out the state
+		if (g_lingo->_state == stateBefore && funcSym.u.bltin != LB::b_return && funcSym.u.bltin != LB::b_value) {
 			if (stackSize == stackSizeBefore + 1) {
 				if (!allowRetVal) {
 					Datum extra = g_lingo->pop();

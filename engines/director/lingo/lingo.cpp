@@ -630,6 +630,7 @@ Common::String Lingo::formatFunctionBody(Symbol &sym) {
 bool Lingo::execute(int targetFrame) {
 	uint localCounter = 0;
 	uint lastUpdate = 0;
+	LingoState *startState = _state;
 
 	while (!_abort && !_freezeState && !_playDone && _state->script && (*_state->script)[_state->pc] != STOP) {
 		if (targetFrame != -1 && (int)_state->callstack.size() == targetFrame)
@@ -708,6 +709,10 @@ bool Lingo::execute(int targetFrame) {
 		_globalCounter++;
 		localCounter++;
 
+		// A nested execute froze, our frames are now part of the frozen state
+		if (_state != startState)
+			break;
+
 		if (!_abort && _state->script == nullptr) {
 			debugC(1, kDebugLingoExec, "Lingo::execute(): PANIC: No script to execute (2)");
 			break;
@@ -732,7 +737,7 @@ bool Lingo::execute(int targetFrame) {
 		}
 	}
 
-	bool result = !_freezeState;
+	bool result = !_freezeState && _state == startState;
 	if (_freezePlay) {
 		debugC(5, kDebugLingoExec, "Lingo::execute(): Called play, pausing execution to the play buffer");
 		freezePlayState();

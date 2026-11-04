@@ -1903,19 +1903,26 @@ void LB::b_abort(int nargs) {
 
 // Helper: call a named handler on a single behavior instance with extra args.
 // extraArgs is stored in reverse order (as popped from stack).
-static Datum callBehaviorHandler(Datum &instance, const Common::String &msgName, const Common::Array<Datum> &extraArgs) {
+// Returns false if the handler froze the Lingo state (e.g. via go), in which
+// case the caller must not touch the stack.
+static bool callBehaviorHandler(Datum &instance, const Common::String &msgName, const Common::Array<Datum> &extraArgs, Datum &result, bool allowRetVal) {
 	Symbol sym = instance.u.obj->getMethod(msgName);
-	if (sym.type == VOIDSYM)
-		return Datum();
+	if (sym.type == VOIDSYM) {
+		result = Datum();
+		return true;
+	}
 
 	g_lingo->push(instance);
 	for (int j = (int)extraArgs.size() - 1; j >= 0; j--)
 		g_lingo->push(extraArgs[j]);
 
 	int frame = g_lingo->_state->callstack.size();
-	LC::call(sym, 1 + (int)extraArgs.size(), true);
-	g_lingo->execute(frame);
-	return g_lingo->pop();
+	// A frozen handler resumes later and must leave the stack as the caller expects
+	LC::call(sym, 1 + (int)extraArgs.size(), allowRetVal);
+	if (!g_lingo->execute(frame))
+		return false;
+	result = allowRetVal ? g_lingo->pop() : Datum();
+	return true;
 }
 
 void LB::b_call(int nargs) {
@@ -1939,12 +1946,13 @@ void LB::b_call(int nargs) {
 
 	Datum result;
 	if (script.type == OBJECT) {
-		result = callBehaviorHandler(script, msgName, extraArgs);
+		if (!callBehaviorHandler(script, msgName, extraArgs, result, allowRetVal))
+			return;
 	} else if (script.type == ARRAY) {
 		for (uint i = 0; i < script.u.farr->arr.size(); i++) {
 			Datum instance = script.u.farr->arr[i];
-			if (instance.type == OBJECT)
-				result = callBehaviorHandler(instance, msgName, extraArgs);
+			if (instance.type == OBJECT && !callBehaviorHandler(instance, msgName, extraArgs, result, allowRetVal))
+				return;
 		}
 	} else {
 		warning("b_call: expected OBJECT or list for script argument");
@@ -3540,8 +3548,10 @@ void LB::b_sendAllSprites(int nargs) {
 				if (sym.type == VOIDSYM)
 					continue;
 				movie->_currentSpriteNum = ch;
-				result = callBehaviorHandler(instance, msgName, extraArgs);
+				bool completed = callBehaviorHandler(instance, msgName, extraArgs, result, allowRetVal);
 				movie->_currentSpriteNum = savedSpriteNum;
+				if (!completed)
+					return;
 				anyHandled = true;
 			}
 		}
@@ -3552,9 +3562,11 @@ void LB::b_sendAllSprites(int nargs) {
 				for (int j = (int)extraArgs.size() - 1; j >= 0; j--)
 					g_lingo->push(extraArgs[j]);
 				int frame = g_lingo->_state->callstack.size();
-				LC::call(h, numExtraArgs, true);
-				g_lingo->execute(frame);
-				result = g_lingo->pop();
+				LC::call(h, numExtraArgs, allowRetVal);
+				if (!g_lingo->execute(frame))
+					return;
+				if (allowRetVal)
+					result = g_lingo->pop();
 			}
 		}
 	}
@@ -3600,8 +3612,10 @@ void LB::b_sendSprite(int nargs) {
 			if (sym.type == VOIDSYM)
 				continue;
 			movie->_currentSpriteNum = (uint)spriteNum;
-			result = callBehaviorHandler(instance, msgName, extraArgs);
+			bool completed = callBehaviorHandler(instance, msgName, extraArgs, result, allowRetVal);
 			movie->_currentSpriteNum = savedSpriteNum;
+			if (!completed)
+				return;
 			handled = true;
 		}
 
@@ -3611,9 +3625,11 @@ void LB::b_sendSprite(int nargs) {
 				for (int j = (int)extraArgs.size() - 1; j >= 0; j--)
 					g_lingo->push(extraArgs[j]);
 				int frame = g_lingo->_state->callstack.size();
-				LC::call(h, numExtraArgs, true);
-				g_lingo->execute(frame);
-				result = g_lingo->pop();
+				LC::call(h, numExtraArgs, allowRetVal);
+				if (!g_lingo->execute(frame))
+					return;
+				if (allowRetVal)
+					result = g_lingo->pop();
 			}
 		}
 	}
