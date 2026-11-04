@@ -22,11 +22,47 @@
 #include "common/macresman.h"
 #include "common/stream.h"
 
+#include "graphics/macgui/macfontmanager.h"
+#include "graphics/macgui/macwindowmanager.h"
+
 #include "director/director.h"
 #include "director/cast.h"
+#include "director/movie.h"
 #include "director/stxt.h"
 
 namespace Director {
+
+// Director for Windows remaps the characters of Mac text through the
+// cross-platform font map (FXmp) and then reads them as Windows text
+static Common::U32String decodeStxtText(Cast *cast, const Common::String &text, uint16 fontId) {
+	if (cast->_platform == Common::kPlatformMacintosh && g_director->getPlatform() == Common::kPlatformWindows) {
+		Cast *mapCast = cast;
+		if (mapCast->_macCharsToWin.empty() && cast->getMovie())
+			mapCast = cast->getMovie()->getCast();
+
+		if (mapCast && !mapCast->_macCharsToWin.empty()) {
+			Common::String fontName = g_director->_wm->_fontMan->getFontName(fontId);
+			bool remapChars = true;
+			if (mapCast->_fontXPlatformMap.contains(fontName)) {
+				FontXPlatformInfo *info = mapCast->_fontXPlatformMap[fontName];
+				if (info->fromPlatform == Common::kPlatformMacintosh)
+					remapChars = info->remapChars;
+			}
+
+			if (remapChars) {
+				Common::String winText(text);
+				for (uint i = 0; i < winText.size(); i++) {
+					byte ch = winText[i];
+					if (mapCast->_macCharsToWin.contains(ch))
+						winText.setChar(mapCast->_macCharsToWin[ch], i);
+				}
+				return Common::U32String(winText, detectFontEncoding(Common::kPlatformWindows, fontId));
+			}
+		}
+	}
+
+	return Common::U32String(text, detectFontEncoding(cast->_platform, fontId));
+}
 
 Stxt::Stxt(Cast *cast, Common::SeekableReadStreamEndian &textStream) : _cast(cast) {
 	// TODO: Side effects on textStream make this a little hard to understand in context?
@@ -59,17 +95,11 @@ Stxt::Stxt(Cast *cast, Common::SeekableReadStreamEndian &textStream) : _cast(cas
 	}
 	debugC(3, kDebugText, "Stxt init: offset: %d strLen: %d dataLen: %d textlen: %u", offset, strLen, dataLen, text.size());
 
-	// TODO: Before applying formatting and decoding the text to a U32String,
-	// check if the following hold true:
-	// - The engine platform doesn't match the file platform
-	// - The movie has a valid font table (FXmp)
-	// - The font table has a mapping between the two platforms
-	// - The text has sections written in a font without a Map None qualifier
-	// If yes, then just those sections should be preprocessed by churning the
-	// bytes through the appropriate mapping (e.g. if running a Mac file on
-	// Windows, use the "Mac: => Win:" rules).
-	// Confirmed in real Director 4 that these sections are preprocessed in
-	// the cast member on startup and not faked at text render time.
+	// TODO: Mac text is remapped for Windows in decodeStxtText(); Windows text
+	// played as Mac should be remapped with the "Win: => Mac:" rules of the
+	// font map in the same way. Confirmed in real Director 4 that these
+	// sections are preprocessed in the cast member on startup and not faked
+	// at text render time.
 
 	uint16 formattingCount = textStream.readUint16();
 	uint32 prevPos = 0;
@@ -94,8 +124,7 @@ Stxt::Stxt(Cast *cast, Common::SeekableReadStreamEndian &textStream) : _cast(cas
 				_ftext += '\001';
 		}
 		_rtext += textPart;
-		Common::CodePage encoding = detectFontEncoding(cast->_platform, currentFont);
-		Common::U32String u32TextPart(textPart, encoding);
+		Common::U32String u32TextPart = decodeStxtText(cast, textPart, currentFont);
 		_ptext += u32TextPart;
 		_ftext += u32TextPart;
 		logText += Common::toPrintable(u32TextPart);
@@ -108,8 +137,7 @@ Stxt::Stxt(Cast *cast, Common::SeekableReadStreamEndian &textStream) : _cast(cas
 	}
 
 	_rtext += text;
-	Common::CodePage encoding = detectFontEncoding(cast->_platform, _style.fontId);
-	Common::U32String u32Text(text, encoding);
+	Common::U32String u32Text = decodeStxtText(cast, text, _style.fontId);
 	_ptext += u32Text;
 	_ftext += u32Text;
 	logText += Common::toPrintable(u32Text);

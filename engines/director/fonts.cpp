@@ -354,6 +354,7 @@ bool Cast::readFXmpLine(Common::SeekableReadStreamEndian &stream) {
 	} else {
 		// font mapping
 		FontXPlatformInfo *info = new FontXPlatformInfo;
+		info->fromPlatform = fromPlatform;
 
 		// to font
 		tok = readFXmpToken(stream);

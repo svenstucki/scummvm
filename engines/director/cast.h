@@ -62,11 +62,12 @@ struct ConfigChunk;
 typedef Common::HashMap<byte, byte> CharMap;
 typedef Common::HashMap<uint16, uint16> FontSizeMap;
 struct FontXPlatformInfo {
+	Common::Platform fromPlatform;
 	Common::String toFont;
 	bool remapChars;
 	FontSizeMap sizeMap;
 
-	FontXPlatformInfo() : remapChars(false) {}
+	FontXPlatformInfo() : fromPlatform(Common::kPlatformUnknown), remapChars(false) {}
 };
 typedef Common::HashMap<Common::String, FontXPlatformInfo *> FontXPlatformMap;
 
