@@ -33,6 +33,7 @@
  * Safecracker
  * Teazle
  * Loewenzahn 2 / 4 / 5
+ * Building Cars with Gary Gadget
  *
  **************************************************/
 
@@ -111,28 +112,34 @@ void KeypollXtra::m_new(int nargs) {
 
 XOBJSTUB(KeypollXtra::m_xtra, 0)
 
+// Key codes are the virtual key codes on Windows and the Mac key codes otherwise
+static Common::Array<int> getKeysDown() {
+	const Common::HashMap<int, int> &keyCodes = g_director->getPlatform() == Common::kPlatformWindows ? g_director->_winKeyCodes : g_director->_KeyCodes;
+	Common::Array<int> keys;
+	for (auto &key : g_director->_keysDown) {
+		if (keyCodes.contains(key))
+			keys.push_back(keyCodes[key]);
+	}
+	return keys;
+}
+
 void KeypollXtra::m_bgOneKey(int nargs) {
 	ARGNUMCHECK(1);
 
-	Common::Event event;
-
 	int requestedKey = g_lingo->pop().asInt();
-
-	while (g_system->getEventManager()->pollEvent(event)) {
-		switch (event.type) {
-		case Common::EVENT_KEYDOWN:
-			if (event.kbd.keycode == requestedKey) {
-				g_lingo->push(1);
-				return;
-			}
-		default:
-			break;
-		}
-	}
-
-	g_lingo->push(0);
+	Common::Array<int> keys = getKeysDown();
+	g_lingo->push(Common::find(keys.begin(), keys.end(), requestedKey) != keys.end() ? 1 : 0);
 }
 
-XOBJSTUB(KeypollXtra::m_bgAllKeys, 0)
+void KeypollXtra::m_bgAllKeys(int nargs) {
+	ARGNUMCHECK(0);
+
+	Datum result;
+	result.type = ARRAY;
+	result.u.farr = new FArray;
+	for (auto key : getKeysDown())
+		result.u.farr->arr.push_back(Datum(key));
+	g_lingo->push(result);
+}
 
 }

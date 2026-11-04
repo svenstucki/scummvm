@@ -281,11 +281,14 @@ static const struct WinKeyCodeMapping {
 };
 
 void DirectorEngine::loadKeyCodes() {
+	// Xtras like KeyPoll use the Windows virtual key codes
+	for (const WinKeyCodeMapping *k = WinkeyCodeMappings; k->scummvm != Common::KEYCODE_INVALID; k++)
+		_winKeyCodes[k->scummvm] = k->win;
+
 	if ((g_director->getPlatform() == Common::kPlatformWindows) && (g_director->getVersion() < 400)) {
 		// Allegedly this keykode list applies for the Windows version of D3.
 		// D4 and D5 for Windows are both confirmed to use the Mac keycode table.
-		for (const WinKeyCodeMapping *k = WinkeyCodeMappings; k->scummvm != Common::KEYCODE_INVALID; k++)
-			_KeyCodes[k->scummvm] = k->win;
+		_KeyCodes = _winKeyCodes;
 	} else {
 		for (const MacKeyCodeMapping *k = MackeyCodeMappings; k->scummvm != Common::KEYCODE_INVALID; k++)
 			_KeyCodes[k->scummvm] = k->mac;

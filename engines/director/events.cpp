@@ -59,6 +59,14 @@ bool DirectorEngine::processSysEvents(bool captureClick, bool skipWindowManager)
 
 	Common::Event event;
 	while (pollEvent(event)) {
+		if (event.type == Common::EVENT_KEYDOWN || event.type == Common::EVENT_KEYUP) {
+			Common::Array<Common::KeyCode>::iterator it = Common::find(_keysDown.begin(), _keysDown.end(), event.kbd.keycode);
+			if (event.type == Common::EVENT_KEYUP && it != _keysDown.end())
+				_keysDown.erase(it);
+			else if (event.type == Common::EVENT_KEYDOWN && it == _keysDown.end())
+				_keysDown.push_back(event.kbd.keycode);
+		}
+
 		if (Director::DT::isMouseInputIgnored()) {
 			if (Common::isMouseEvent(event)) {
 				if (event.type == Common::EVENT_LBUTTONDOWN) {

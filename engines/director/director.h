@@ -270,6 +270,7 @@ public:
 public:
 	int _colorDepth;
 	Common::HashMap<int, int> _KeyCodes;
+	Common::HashMap<int, int> _winKeyCodes;
 	int _machineType;
 	bool _centerStage;
 	char _dirSeparator;
@@ -314,6 +315,7 @@ public:
 	uint16 _key;
 	int _keyCode;
 	byte _keyFlags;
+	Common::Array<Common::KeyCode> _keysDown;
 
 	LingoProfiler *_lingoProfiler = nullptr;
 
