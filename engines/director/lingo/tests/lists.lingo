@@ -343,6 +343,12 @@ scummvmAssertEqual(getProp(testList, 3), #c)
 
 
 -- listP
+scummvmAssert(listP([1, 2]))
+scummvmAssert(listP([#a: 1]))
+scummvmAssert(listP(point(1, 2)))
+scummvmAssert(listP(rect(1, 2, 3, 4)))
+scummvmAssert(not listP(1))
+scummvmAssert(not listP("abc"))
 
 
 -- max

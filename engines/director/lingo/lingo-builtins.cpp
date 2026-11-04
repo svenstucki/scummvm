@@ -1321,7 +1321,8 @@ void LB::b_list(int nargs) {
 void LB::b_listP(int nargs) {
 	Datum list = g_lingo->pop();
 	Datum d(0);
-	if (list.type == ARRAY || list.type == PARRAY) {
+	// Points and rects are lists too
+	if (list.type == ARRAY || list.type == PARRAY || list.type == POINT || list.type == RECT) {
 		d.u.i = 1;
 	}
 	g_lingo->push(d);
