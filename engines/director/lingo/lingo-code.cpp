@@ -1653,6 +1653,14 @@ void LC::call(const Common::String &name, int nargs, bool allowRetVal) {
 	if (nargs > 0) {
 		Datum firstArg = g_lingo->_state->stack[g_lingo->_state->stack.size() - nargs];
 
+		// new(#type, ...) creates a cast member
+		if (firstArg.type == SYMBOL && name.equalsIgnoreCase("new") && g_director->getVersion() >= 500) {
+			LB::b_newMember(nargs);
+			if (!allowRetVal)
+				g_lingo->pop();
+			return;
+		}
+
 		// Factory/XObject method call
 		if (firstArg.isVarRef()) { // first arg could be method name
 			Datum objName(name);

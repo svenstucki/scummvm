@@ -2771,6 +2771,54 @@ void LB::b_erase(int nargs) {
 	}
 }
 
+void LB::b_newMember(int nargs) {
+	// new(#type [, castLib x | member n of castLib x])
+	Datum target;
+	if (nargs >= 2) {
+		g_lingo->dropStack(nargs - 2);
+		target = g_lingo->pop();
+	}
+	Datum typeSym = g_lingo->pop();
+
+	CastType type = kCastTypeNull;
+	if (typeSym.u.s->equalsIgnoreCase("field")) {
+		type = kCastText;
+	} else {
+		for (int i = kCastTypeNull + 1; i <= kCastXtra; i++) {
+			if (typeSym.u.s->equalsIgnoreCase(castType2str((CastType)i))) {
+				type = (CastType)i;
+				break;
+			}
+		}
+	}
+
+	Movie *movie = g_director->getCurrentMovie();
+	Cast *cast = nullptr;
+	int castId = 0;
+	if (target.type == CASTREF) {
+		if (movie->getCasts()->contains(target.u.cast->castLib))
+			cast = movie->getCasts()->getVal(target.u.cast->castLib);
+		castId = target.u.cast->member;
+	} else if (target.type == CASTLIBREF) {
+		if (movie->getCasts()->contains(target.u.i))
+			cast = movie->getCasts()->getVal(target.u.i);
+	} else {
+		cast = movie->getCast();
+	}
+
+	if (type == kCastTypeNull || !cast) {
+		g_lingo->lingoError("b_newMember: cannot create member of type %s in %s", typeSym.asString().c_str(), target.asString().c_str());
+		g_lingo->pushVoid();
+		return;
+	}
+	if (castId <= 0)
+		castId = cast->getNextUnusedID();
+
+	warning("STUB: b_newMember: creating empty %s member %d in castLib %d", castType2str(type), castId, cast->_castLibID);
+	cast->createCastMember(type, castId);
+	g_lingo->push(Datum(CastMemberID(castId, cast->_castLibID)));
+}
+
 void LB::b_findEmpty(int nargs) {
 	Datum d = g_lingo->pop();
 	Cast *cast = g_director->getCurrentMovie()->getCast();

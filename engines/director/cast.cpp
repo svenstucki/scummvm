@@ -265,6 +265,17 @@ CastMember *Cast::setCastMember(int castId, CastMember *cast) {
 	return cast;
 }
 
+CastMember *Cast::createCastMember(CastType type, int castId) {
+	// Like in Director, the new member replaces the one in its slot
+	CastMember *member = new CastMember(this, castId);
+	member->_type = type;
+	setCastMember(castId, member);
+	delete _castsInfo.getValOrDefault(castId, nullptr);
+	_castsInfo[castId] = new CastMemberInfo();
+	rebuildCastNameCache();
+	return member;
+}
+
 bool Cast::duplicateCastMember(CastMember *source, CastMemberInfo *info, int targetId) {
 	if (_loadedCast->contains(targetId)) {
 		eraseCastMember(targetId);

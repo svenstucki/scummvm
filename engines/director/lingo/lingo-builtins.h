@@ -107,6 +107,7 @@ void b_duplicate(int nargs);
 void b_editableText(int nargs);
 void b_erase(int nargs);
 void b_findEmpty(int nargs);
+void b_newMember(int nargs);
 void b_importFileInto(int nargs);
 void b_installMenu(int nargs);
 void b_label(int nargs);
