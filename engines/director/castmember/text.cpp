@@ -464,7 +464,8 @@ int TextCastMember::getLineHeight(int line) {
 int TextCastMember::getTextHeight() {
 	Graphics::MacText *target = getWidget();
 	if (target) {
-		return target->getLineSpacing();
+		// The line spacing is only a minimum, the lines are as high as their font
+		return MAX(target->getLineHeight(0), target->getLineSpacing());
 	}
 	return _lineSpacing;
 }
