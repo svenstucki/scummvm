@@ -1066,6 +1066,15 @@ bool Score::renderPrePaletteCycle(RenderMode mode) {
 	if (!_currentFrame->_mainChannels.palette.colorCycling &&
 		!_currentFrame->_mainChannels.palette.overTime) {
 
+		// A rate of 0 can't be picked in the D5+ palette dialog; such frames
+		// switch the palette without a fade instead of using the slowest one
+		if (_version >= kFileVer500 && _currentFrame->_mainChannels.palette.speed == 0 &&
+				_currentFrame->_mainChannels.palette.normal) {
+			if (currentPalette != _vm->_lastPalette)
+				_vm->setPalette(currentPalette);
+			return false;
+		}
+
 		int frameRate = CLIP<int>(_currentFrame->_mainChannels.palette.speed, 1, 30);
 
 		if (debugChannelSet(-1, kDebugFast))
