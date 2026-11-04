@@ -297,12 +297,17 @@ void Movie::resolveScriptEvent(LingoEvent &event) {
 			}
 
 			if (_vm->getVersion() >= 600) {
-				event.scriptType = kScoreScript;
-				event.scriptId = scriptId;
-				if (event.behaviorIndex >= 0 && event.behaviorIndex < (int)_score->_channels[event.channelId]->_scriptInstanceList.size())
-					event.scriptInstance = _score->_channels[event.channelId]->_scriptInstanceList[event.behaviorIndex].u.obj;
-				else
+				if (event.behaviorIndex >= 0 && event.behaviorIndex < (int)_score->_channels[event.channelId]->_scriptInstanceList.size()) {
+					AbstractObject *instance = _score->_channels[event.channelId]->_scriptInstanceList[event.behaviorIndex].u.obj;
+					// A behavior without a handler for the event lets it pass on
+					if (instance->getMethod(_lingo->_eventHandlerTypes[event.event]).type != VOIDSYM) {
+						event.scriptType = kScoreScript;
+						event.scriptId = scriptId;
+						event.scriptInstance = instance;
+					}
+				} else {
 					warning("resolveScriptEvent: behaviorIndex %d out of range", event.behaviorIndex);
+				}
 				return;
 			}
 
@@ -444,6 +449,25 @@ void Movie::resolveScriptEvent(LingoEvent &event) {
 	}
 }
 
+// Only behaviors with a handler for the event receive it, the last of them doesn't pass it on
+void Movie::queueBehaviorEvents(Common::Queue<LingoEvent> &queue, LEvent event, int eventId, Common::Point pos, uint16 spriteId) {
+	Channel *channel = _score->getChannelById(spriteId);
+	if (!channel)
+		return;
+
+	Common::Array<uint> handlers;
+	for (uint i = 0; i < channel->_scriptInstanceList.size(); i++) {
+		Datum &instance = channel->_scriptInstanceList[i];
+		if (instance.type == OBJECT && instance.u.obj->getMethod(_lingo->_eventHandlerTypes[event]).type != VOIDSYM)
+			handlers.push_back(i);
+	}
+
+	for (uint i = 0; i < handlers.size(); i++) {
+		bool passThrough = (i != handlers.size() - 1);
+		queue.push(LingoEvent(event, eventId, kSpriteHandler, passThrough, pos, spriteId, handlers[i]));
+	}
+}
+
 void Movie::queueEvent(Common::Queue<LingoEvent> &queue, LEvent event, int targetId, Common::Point pos) {
 	if (_nextEventId < 0)
 		_nextEventId = 0;
@@ -461,7 +485,7 @@ void Movie::queueEvent(Common::Queue<LingoEvent> &queue, LEvent event, int targe
 	if (g_director->getVersion() >= 600) {
 		if (targetId != 0) {
 			pointedSpriteId = targetId;
-		} else if (event != kEventPrepareFrame) {
+		} else if (event != kEventPrepareFrame && event != kEventEnterFrame && event != kEventExitFrame) {
 			pointedSpriteId = _score->getMouseSpriteIDFromPos(pos);
 		}
 	}
@@ -614,15 +638,10 @@ void Movie::queueEvent(Common::Queue<LingoEvent> &queue, LEvent event, int targe
 		case kEventMouseWithin:		// D6+
 			if (_vm->getVersion() >= 600) {
 				if (pointedSpriteId != 0) {
-					Channel *channel = _score->getChannelById(pointedSpriteId);
-
 					// Generate event for each behavior, and pass through for all but the last one.
 					// This is to allow multiple behaviors on a single sprite to each have a
 					// chance to handle the event.
-					for (uint i = 0; i < channel->_scriptInstanceList.size(); i++) {
-						bool passThrough = (i != channel->_scriptInstanceList.size() - 1);
-						queue.push(LingoEvent(event, eventId, kSpriteHandler, passThrough, pos, pointedSpriteId, i));
-					}
+					queueBehaviorEvents(queue, event, eventId, pos, pointedSpriteId);
 
 					if (event == kEventBeginSprite || event == kEventEndSprite || event == kEventMouseUpOutSide
 							|| event == kEventPrepareFrame) {
@@ -642,6 +661,11 @@ void Movie::queueEvent(Common::Queue<LingoEvent> &queue, LEvent event, int targe
 		case kEventEnterFrame:
 		case kEventExitFrame:
 		case kEventTimeout:
+			// D6+ broadcasts these per sprite, and the sprite's behaviors are the only recipients
+			if ((event == kEventEnterFrame || event == kEventExitFrame) && pointedSpriteId != 0) {
+				queueBehaviorEvents(queue, event, eventId, pos, pointedSpriteId);
+				break;
+			}
 			queue.push(LingoEvent(event, eventId, kFrameHandler, false, pos, channelId));
 			// fall through
 

@@ -153,6 +153,7 @@ private:
 	void loadFileInfo(Common::SeekableReadStreamEndian &stream);
 
 	void queueEvent(Common::Queue<LingoEvent> &queue, LEvent event, int targetId = 0, Common::Point pos = Common::Point(-1, -1));
+	void queueBehaviorEvents(Common::Queue<LingoEvent> &queue, LEvent event, int eventId, Common::Point pos, uint16 spriteId);
 	void queueSpriteEvent(Common::Queue<LingoEvent> &queue, LEvent event, int eventId, int spriteId);
 
 public:

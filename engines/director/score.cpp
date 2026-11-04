@@ -674,7 +674,10 @@ void Score::update() {
 		// exitFrame is not called in this case.
 		if (_haveInteractivity && !_window->_skipFrameAdvance && !_exitFrameCalled) {
 			// Exit the current frame. This can include scopeless ScoreScripts.
-			_movie->processEvent(kEventExitFrame);
+			if (_version >= kFileVer600)
+				_movie->broadcastEvent(kEventExitFrame);
+			else
+				_movie->processEvent(kEventExitFrame);
 			_exitFrameCalled = true;
 			_skipIdle = false;
 		}
@@ -829,7 +832,9 @@ void Score::update() {
 	count = _window->frozenLingoStateCount();
 	if (!_window->_playbackPaused) {
 		_exitFrameCalled = false;
-		if (_version >= kFileVer400) {
+		if (_version >= kFileVer600) {
+			_movie->broadcastEvent(kEventEnterFrame);
+		} else if (_version >= kFileVer400) {
 			_movie->processEvent(kEventEnterFrame);
 		}
 	}
