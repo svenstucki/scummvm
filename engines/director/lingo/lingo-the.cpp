@@ -2228,7 +2228,7 @@ void Lingo::setTheCast(Datum &id1, int field, Datum &d) {
 		}
 		CastMember *replacement = (CastMember *)d.u.obj;
 		Cast *cast = movie->getCast(id);
-		cast->duplicateCastMember(replacement, nullptr, id.member);
+		cast->setCastMemberMedia(replacement, id.member);
 		Score *score = movie->getScore();
 		score->refreshPointersForCastMemberID(id);
 		return;
@@ -2748,7 +2748,7 @@ void Lingo::setObjectProp(Datum &obj, Common::String &propName, Datum &val) {
 			}
 			CastMember *replacement = (CastMember *)val.u.obj;
 			Cast *cast = movie->getCast(id);
-			cast->duplicateCastMember(replacement, nullptr, id.member);
+			cast->setCastMemberMedia(replacement, id.member);
 			Score *score = movie->getScore();
 			score->refreshPointersForCastMemberID(id);
 			return;

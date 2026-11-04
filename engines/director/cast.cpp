@@ -315,6 +315,16 @@ bool Cast::duplicateCastMember(CastMember *source, CastMemberInfo *info, int tar
 	return true;
 }
 
+bool Cast::setCastMemberMedia(CastMember *media, int castId) {
+	// The media only replaces the content, the member keeps its info (e.g. name)
+	CastMemberInfo *oldInfo = getCastMemberInfo(castId);
+	if (!oldInfo)
+		return duplicateCastMember(media, nullptr, castId);
+
+	CastMemberInfo info = *oldInfo;
+	return duplicateCastMember(media, &info, castId);
+}
+
 bool Cast::eraseCastMember(int castId) {
 	if (_loadedCast->contains(castId)) {
 		CastMember *member = _loadedCast->getVal(castId);

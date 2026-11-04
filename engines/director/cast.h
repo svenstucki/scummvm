@@ -129,6 +129,7 @@ public:
 	CastMember *setCastMember(int castId, CastMember *cast);
 	CastMember *createCastMember(CastType type, int castId);
 	bool duplicateCastMember(CastMember *source, CastMemberInfo *info, int targetId);
+	bool setCastMemberMedia(CastMember *media, int castId);
 	bool eraseCastMember(int castId);
 	CastMember *getCastMember(int castId, bool load = true);
 	CastMember *getCastMemberByNameAndType(const Common::String &name, CastType type);
