@@ -113,7 +113,11 @@ void Lingo::func_goto(Datum &frame, Datum &movie, bool calledfromgo) {
 
 	// Since the frames are not going to be consecutive, we might run into
 	// an endge case, so better kill behaviors proactively.
+	// endSprite handlers run nested here and must not consume the pending freeze
+	bool freezeState = _freezeState;
+	_freezeState = false;
 	score->killScriptInstances(score->getNextFrame());
+	_freezeState = freezeState;
 }
 
 void Lingo::func_gotoloop() {
