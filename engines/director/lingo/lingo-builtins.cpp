@@ -4025,10 +4025,16 @@ void LB::b_inside(int nargs) {
 		return;
 	}
 
-	Common::Rect rect2(r2.u.farr->arr[0].asInt(), r2.u.farr->arr[1].asInt(), r2.u.farr->arr[2].asInt(), r2.u.farr->arr[3].asInt());
-	Common::Point point1(p1.u.farr->arr[0].asInt(), p1.u.farr->arr[1].asInt());
+	// Compare the coordinates directly: Lingo rects can have their
+	// left after their right, which no point is inside of
+	int left = r2.u.farr->arr[0].asInt();
+	int top = r2.u.farr->arr[1].asInt();
+	int right = r2.u.farr->arr[2].asInt();
+	int bottom = r2.u.farr->arr[3].asInt();
+	int h = p1.u.farr->arr[0].asInt();
+	int v = p1.u.farr->arr[1].asInt();
 
-	d = rect2.contains(point1);
+	d = (left <= h && h < right && top <= v && v < bottom) ? 1 : 0;
 
 	g_lingo->push(d);
 }
