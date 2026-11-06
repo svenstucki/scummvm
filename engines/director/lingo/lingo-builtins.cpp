@@ -1862,7 +1862,18 @@ void LB::b_save(int nargs) {
 
 	Archive *archive = cast->getArchive().get();
 	Common::String filename = path.type == VOID ? archive->getPathName().toString(g_director->_dirSeparator) : path.asString();
-	archive->writeToFile(filename, movie);
+	if (!archive->writeToFile(filename, movie) || path.type != VOID)
+		return;
+
+	// Movies that load this cast library later must get the saved file,
+	// not the cached archive without the data of new cast members
+	Common::Path pathName = archive->getPathName();
+	Common::SharedPtr<Archive> oldArchive = g_director->_allSeenResFiles.getValOrDefault(pathName);
+	if (oldArchive.get() != archive)
+		return;
+	g_director->_allSeenResFiles.erase(pathName);
+	if (!g_director->openArchive(pathName))
+		g_director->_allSeenResFiles.setVal(pathName, oldArchive);
 }
 
 void LB::b_saveMovie(int nargs) {
