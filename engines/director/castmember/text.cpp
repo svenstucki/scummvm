@@ -312,7 +312,11 @@ Graphics::MacWidget *TextCastMember::createWindowOrWidget(Common::Rect &bbox, Co
 
 	int maxWidth = _initialRect.width() + _borderSize * 2 + _gutterSize * 2 + _boxShadow;
 	widget = new Graphics::MacText(g_director->getCurrentWindow()->getMacWindow(), bbox.left, bbox.top, dims.width(), dims.height(), g_director->_wm, _ftext, macFont, getForeColor(), getBackColor(), maxWidth, getAlignment(), _lineSpacing, _borderSize, _gutterSize, _boxShadow, _textShadow, _textType == kTextTypeFixed || _textType == kTextTypeScrolling, _textType == kTextTypeScrolling);
-	widget->setSelRange(g_director->getCurrentMovie()->_selStart, g_director->getCurrentMovie()->_selEnd);
+	Movie *movie = g_director->getCurrentMovie();
+	widget->setSelRange(movie->_selStart, movie->_selEnd);
+	// Without a selection set from Lingo, a field that gets the keyboard
+	// focus shows the insertion point instead of having all text selected
+	widget->setAutoSelect(movie->_selStart != -1 || movie->_selEnd != -1);
 	widget->draw();
 
 	return widget;
