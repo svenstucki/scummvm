@@ -634,7 +634,12 @@ Datum Lingo::getTheEntity(int entity, Datum &id, int field) {
 		d = _floatPrecision;
 		break;
 	case kTheFrame:
-		d = (int)score->getCurrentFrameNum();
+		// D6 moves the playhead as soon as go is called, so the frame is
+		// already the target of a pending jump
+		if (g_director->getVersion() >= 600 && score->getNextFrame())
+			d = score->getNextFrame();
+		else
+			d = (int)score->getCurrentFrameNum();
 		break;
 	case kTheFrameLabel:
 		d.type = STRING;
